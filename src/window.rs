@@ -40,8 +40,6 @@ pub fn get_window_rect(window_handle: HWND) -> RECT {
             Ok(_) => (),
             Err(error) => println!("Failed to get window rect: {:?}", error),
         }
-
-        println!("rect: {:?}", rect);
     }
 
     rect

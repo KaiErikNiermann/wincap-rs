@@ -1,6 +1,7 @@
 extern crate image;
 use error::WindowsCaptureError;
 use image::{DynamicImage, ImageBuffer, Pixel, Rgba, io::Reader as ImageReader};
+use windows::Graphics::Capture::Direct3D11CaptureFrame;
 use std::sync::mpsc::channel;
 use windows::core::ComInterface;
 use windows::core::{IInspectable, Result, HSTRING};
@@ -16,7 +17,7 @@ use windows::Win32::Foundation::{HWND, RECT};
 use windows::Win32::Graphics::Direct3D11::{
     ID3D11Resource, ID3D11Texture2D, D3D11_BIND_FLAG, D3D11_BOX, D3D11_CPU_ACCESS_READ,
     D3D11_MAPPED_SUBRESOURCE, D3D11_MAP_READ, D3D11_RESOURCE_MISC_FLAG, D3D11_TEXTURE2D_DESC,
-    D3D11_USAGE_STAGING,
+    D3D11_USAGE_STAGING, ID3D11Device, ID3D11DeviceContext,
 };
 use windows::Win32::Graphics::Gdi::HMONITOR;
 use windows::Win32::System::WinRT::{
@@ -27,6 +28,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
 };
 use std::env;
 use std::time::Instant;
+use std::sync::mpsc::{Sender, Receiver};
 
 pub mod devices;
 pub mod error;
@@ -149,8 +151,44 @@ fn init() {
     }
 }
 
-fn setup_capture() {
-    
+fn frame_texture(frame: &Direct3D11CaptureFrame, d3d_device: &ID3D11Device, d3d_context: &ID3D11DeviceContext, rect: &RECT) -> error::Result<ID3D11Texture2D> {
+    Ok(unsafe {
+        let source_texture: ID3D11Texture2D =
+            devices::get_d3d_interface_from_object(&frame.Surface()?)?;
+
+        let mut desc = D3D11_TEXTURE2D_DESC::default();
+        source_texture.GetDesc(&mut desc);
+        desc.BindFlags = D3D11_BIND_FLAG(0);
+        desc.MiscFlags = D3D11_RESOURCE_MISC_FLAG(0);
+        desc.Usage = D3D11_USAGE_STAGING;
+        desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+
+        let copy_texture = {
+            let mut texture = None;
+            d3d_device.CreateTexture2D(&desc, None, Some(&mut texture))?;
+            texture.unwrap()
+        };
+
+        d3d_context.CopySubresourceRegion(
+            Some(&copy_texture.cast()?),
+            0,
+            0,
+            0,
+            0,
+            Some(&source_texture.cast()?),
+            0,
+            Some(&D3D11_BOX {
+                left: rect.left as u32,
+                top: rect.top as u32,
+                right: rect.right as u32,
+                bottom: rect.bottom as u32,
+                front: 0,
+                back: 1,
+            }),
+        );
+        
+        copy_texture
+    })
 }
 
 fn take_sc(
@@ -190,53 +228,19 @@ fn take_sc(
     session.StartCapture()?;
 
     let frame = receiver.recv().unwrap();
-
-
-    let texture = unsafe {
-        let source_texture: ID3D11Texture2D =
-            devices::get_d3d_interface_from_object(&frame.Surface()?)?;
-
-        let mut desc = D3D11_TEXTURE2D_DESC::default();
-        source_texture.GetDesc(&mut desc);
-        desc.BindFlags = D3D11_BIND_FLAG(0);
-        desc.MiscFlags = D3D11_RESOURCE_MISC_FLAG(0);
-        desc.Usage = D3D11_USAGE_STAGING;
-        desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-
-        let copy_texture = {
-            let mut texture = None;
-            d3d_device.CreateTexture2D(&desc, None, Some(&mut texture))?;
-            texture.unwrap()
-        };
-
-        d3d_context.CopyResource(Some(&copy_texture.cast()?), Some(&source_texture.cast()?));
-        
-        
-        // d3d_context.CopySubresourceRegion(
-        //     Some(&copy_texture.cast()?),
-        //     0,
-        //     0,
-        //     0,
-        //     0,
-        //     Some(&source_texture.cast()?),
-        //     0,
-        //     Some(&D3D11_BOX {
-        //         left: rect.left as u32,
-        //         top: rect.top as u32,
-        //         right: rect.right as u32,
-        //         bottom: rect.bottom as u32,
-        //         front: 0,
-        //         back: 1,
-        //     }),
-        // );
-
-        session.Close()?;
-        frame_pool.Close()?;
-
-        copy_texture
-    };
+    let texture = frame_texture(&frame, &d3d_device, &d3d_context, rect)?;
+    frame.Close()?;
     
-    
+    for _ in 0..10 {
+        let frame = receiver.recv().unwrap();
+        println!("Frame received");
+        let texture = frame_texture(&frame, &d3d_device, &d3d_context, rect)?;
+        frame.Close()?;
+    }
+
+    session.Close()?;
+    frame_pool.Close()?;
+
     let subresource_size = ResourceSize {
         width: (rect.right - rect.left) as u32,
         height: (rect.bottom - rect.top) as u32,
