@@ -1,6 +1,6 @@
 extern crate image;
 use error::WindowsCaptureError;
-use image::{DynamicImage, ImageBuffer, Pixel, Rgba, io::Reader as ImageReader};
+use image::{DynamicImage, ImageBuffer, Rgba, io::Reader as ImageReader};
 use windows::Graphics::Capture::Direct3D11CaptureFrame;
 use std::sync::mpsc::channel;
 use windows::core::Interface;
@@ -10,7 +10,6 @@ use windows::Graphics::{
     Capture::{Direct3D11CaptureFramePool, GraphicsCaptureItem},
     DirectX::DirectXPixelFormat,
     Imaging::{BitmapAlphaMode, BitmapEncoder, BitmapPixelFormat},
-    SizeInt32,
 };
 use windows::Storage::{CreationCollisionOption, FileAccessMode, StorageFolder};
 use windows::Win32::Foundation::{HWND, RECT};
@@ -23,13 +22,6 @@ use windows::Win32::Graphics::Gdi::HMONITOR;
 use windows::Win32::System::WinRT::{
     Graphics::Capture::IGraphicsCaptureItemInterop, RoInitialize, RO_INIT_MULTITHREADED,
 };
-use windows::Win32::UI::WindowsAndMessaging::{
-    GetSystemMetrics, SM_CXPADDEDBORDER, SM_CYCAPTION, SM_CYFRAME,
-};
-use std::env;
-use std::time::Instant;
-use std::sync::mpsc::{Sender, Receiver};
-
 pub mod devices;
 pub mod error;
 pub mod monitor;
@@ -266,16 +258,6 @@ fn take_sc(
                 (desc.Height * mapped.RowPitch) as usize,
             )
         };
-
-        let mut title_bar_height = {
-            GetSystemMetrics(SM_CYCAPTION)
-                + GetSystemMetrics(SM_CYFRAME)
-                + GetSystemMetrics(SM_CXPADDEDBORDER)
-        } as u32;
-
-        if rect.bottom == item_size.Height as i32 && rect.right == item_size.Width as i32 {
-            title_bar_height = 0;
-        }
 
         let bytes_per_pixel = 4;
         let mut bits = vec![0u8; (subresource_size.width * desc.Height * bytes_per_pixel) as usize];

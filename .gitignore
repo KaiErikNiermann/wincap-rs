@@ -1,0 +1,7 @@
+# Compiled files
+/target/
+
+# misc 
+*.png 
+*.jpeg
+src/main.rs

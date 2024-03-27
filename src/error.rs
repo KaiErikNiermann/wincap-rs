@@ -1,7 +1,4 @@
-use std::{
-    error::Error,
-    fmt::{self, Display},
-};
+use std::error::Error;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
