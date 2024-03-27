@@ -3,7 +3,7 @@ use error::WindowsCaptureError;
 use image::{DynamicImage, ImageBuffer, Pixel, Rgba, io::Reader as ImageReader};
 use windows::Graphics::Capture::Direct3D11CaptureFrame;
 use std::sync::mpsc::channel;
-use windows::core::ComInterface;
+use windows::core::Interface;
 use windows::core::{IInspectable, Result, HSTRING};
 use windows::Foundation::TypedEventHandler;
 use windows::Graphics::{
@@ -74,10 +74,10 @@ fn create_dynamic_image(
         let offset = (y * image_scr.size.width + x) as usize * 4; // 4 channels (R, G, B, A)
         if offset + 3 < image_scr.bits.len() {
             let rgba = Rgba([
-                image_scr.bits[offset + 2],     
-                image_scr.bits[offset + 1], 
-                image_scr.bits[offset], 
-                image_scr.bits[offset + 3], 
+                image_scr.bits[offset + 2],
+                image_scr.bits[offset + 1],
+                image_scr.bits[offset],
+                image_scr.bits[offset + 3],
             ]);
             *pixel = rgba;
         }
@@ -94,9 +94,9 @@ fn create_dynamic_image(
 fn create_capture_item(handle: Handle) -> Result<GraphicsCaptureItem> {
     let interop = windows::core::factory::<GraphicsCaptureItem, IGraphicsCaptureItemInterop>()?;
     match handle {
-        Handle::HWND(window_handle) => 
+        Handle::HWND(window_handle) =>
             unsafe { interop.CreateForWindow(window_handle) },
-        Handle::HMONITOR(monitor_handle) => 
+        Handle::HMONITOR(monitor_handle) =>
             unsafe { interop.CreateForMonitor(monitor_handle) },
     }
 }
@@ -136,7 +136,7 @@ fn save_as_image(img: &ImageResource) -> error::Result<DynamicImage> {
     let saved_to_path = format!("{}/{}", path, "screenshot.png");
 
     match ImageReader::open(saved_to_path) {
-        Ok(image) => Ok(image.decode().unwrap()), 
+        Ok(image) => Ok(image.decode().unwrap()),
         Err(e) => Err(WindowsCaptureError::ImageSaveFailedErr(e))
     }
 }
@@ -158,10 +158,10 @@ fn frame_texture(frame: &Direct3D11CaptureFrame, d3d_device: &ID3D11Device, d3d_
 
         let mut desc = D3D11_TEXTURE2D_DESC::default();
         source_texture.GetDesc(&mut desc);
-        desc.BindFlags = D3D11_BIND_FLAG(0);
-        desc.MiscFlags = D3D11_RESOURCE_MISC_FLAG(0);
+        desc.BindFlags = D3D11_BIND_FLAG(0).0 as u32;
+        desc.MiscFlags = D3D11_RESOURCE_MISC_FLAG(0).0 as u32;
         desc.Usage = D3D11_USAGE_STAGING;
-        desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+        desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ.0 as u32;
 
         let copy_texture = {
             let mut texture = None;
@@ -186,7 +186,7 @@ fn frame_texture(frame: &Direct3D11CaptureFrame, d3d_device: &ID3D11Device, d3d_
                 back: 1,
             }),
         );
-        
+
         copy_texture
     })
 }
@@ -230,13 +230,12 @@ fn take_sc(
     let frame = receiver.recv().unwrap();
     let texture = frame_texture(&frame, &d3d_device, &d3d_context, rect)?;
     frame.Close()?;
-    
-    for _ in 0..10 {
-        let frame = receiver.recv().unwrap();
-        println!("Frame received");
-        let texture = frame_texture(&frame, &d3d_device, &d3d_context, rect)?;
-        frame.Close()?;
-    }
+
+    // for _ in 0..10 {
+    //     let frame = receiver.recv().unwrap();
+    //     let texture = frame_texture(&frame, &d3d_device, &d3d_context, rect)?;
+    //     frame.Close()?;
+    // }
 
     session.Close()?;
     frame_pool.Close()?;
@@ -259,7 +258,7 @@ fn take_sc(
             0,
             Some(&mut mapped),
         )?;
-        
+
         // Get a slice of bytes
         let slice: &[u8] = {
             std::slice::from_raw_parts(

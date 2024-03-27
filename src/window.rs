@@ -56,11 +56,16 @@ pub fn window_sc(window_title: &str, rect: Option<&WindowRect>, mode: &ImageMode
             bottom: window_rect.bottom,
         },
         None => {
-            get_window_rect(window_handle)
+            let r = get_window_rect(window_handle);
+            RECT {
+                left: 0,
+                top: 0,
+                right: r.right - r.left,
+                bottom: r.bottom - r.top,
+            }
         }
     };
 
     let window_capture_item = create_capture_item(Handle::HWND(window_handle)).unwrap();
-
     take_sc(&window_capture_item, &capture_rect, mode)
 }

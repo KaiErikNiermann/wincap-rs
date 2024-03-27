@@ -4,13 +4,13 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-image = "0.24.7"
+image = "0.25"
 backtrace = "0.3"
 thiserror = "1.0"
 anyhow = "1.0"
 
 [dependencies.windows]
-version = "0.48.0"
+version = "0.54"
 features = [
     "Foundation",
     "Win32_Foundation",
@@ -37,7 +37,7 @@ features = [
 ]
 
 [dependencies.windows-sys]
-version = "0.48"
+version = "0.52"
 features = [
     "Win32_Foundation",
     "Win32_UI_WindowsAndMessaging",
