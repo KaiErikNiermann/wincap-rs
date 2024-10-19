@@ -3,7 +3,7 @@ use windows::Win32::Foundation::RECT;
 use windows::Win32::Graphics::Gdi::{MonitorFromWindow, MONITOR_DEFAULTTOPRIMARY};
 use windows::Win32::UI::WindowsAndMessaging::GetDesktopWindow;
 
-use crate::{create_capture_item, init, take_sc, Handle, error, ImageMode};
+use crate::{create_capture_item, error, init, take_sc, Handle, ImageMode};
 
 pub fn monitor_sc(rect: Option<&RECT>, mode: &ImageMode) -> error::Result<DynamicImage> {
     init();
@@ -15,9 +15,7 @@ pub fn monitor_sc(rect: Option<&RECT>, mode: &ImageMode) -> error::Result<Dynami
 
     let (width, height) = match monitor_capture_item.Size() {
         Ok(size) => (size.Width, size.Height),
-        Err(error) => {
-            return Err(error::WindowsCaptureError::DimensionNotFoundErr(error))
-        }
+        Err(error) => return Err(error::WindowsCaptureError::DimensionNotFoundErr(error)),
     };
 
     let capture_rect = match rect {
@@ -35,5 +33,5 @@ pub fn monitor_sc(rect: Option<&RECT>, mode: &ImageMode) -> error::Result<Dynami
         },
     };
 
-    take_sc(&monitor_capture_item, &capture_rect, mode) 
+    take_sc(&monitor_capture_item, &capture_rect, mode)
 }

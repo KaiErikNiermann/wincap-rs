@@ -1,11 +1,11 @@
 extern crate image;
 use error::WindowsCaptureError;
-use image::{DynamicImage, ImageBuffer, Rgba, io::Reader as ImageReader};
-use windows::Graphics::Capture::Direct3D11CaptureFrame;
+use image::{DynamicImage, ImageBuffer, ImageReader, Rgba};
 use std::sync::mpsc::channel;
 use windows::core::Interface;
 use windows::core::{IInspectable, Result, HSTRING};
 use windows::Foundation::TypedEventHandler;
+use windows::Graphics::Capture::Direct3D11CaptureFrame;
 use windows::Graphics::{
     Capture::{Direct3D11CaptureFramePool, GraphicsCaptureItem},
     DirectX::DirectXPixelFormat,
@@ -14,9 +14,9 @@ use windows::Graphics::{
 use windows::Storage::{CreationCollisionOption, FileAccessMode, StorageFolder};
 use windows::Win32::Foundation::{HWND, RECT};
 use windows::Win32::Graphics::Direct3D11::{
-    ID3D11Resource, ID3D11Texture2D, D3D11_BIND_FLAG, D3D11_BOX, D3D11_CPU_ACCESS_READ,
-    D3D11_MAPPED_SUBRESOURCE, D3D11_MAP_READ, D3D11_RESOURCE_MISC_FLAG, D3D11_TEXTURE2D_DESC,
-    D3D11_USAGE_STAGING, ID3D11Device, ID3D11DeviceContext,
+    ID3D11Device, ID3D11DeviceContext, ID3D11Resource, ID3D11Texture2D, D3D11_BIND_FLAG, D3D11_BOX,
+    D3D11_CPU_ACCESS_READ, D3D11_MAPPED_SUBRESOURCE, D3D11_MAP_READ, D3D11_RESOURCE_MISC_FLAG,
+    D3D11_TEXTURE2D_DESC, D3D11_USAGE_STAGING,
 };
 use windows::Win32::Graphics::Gdi::HMONITOR;
 use windows::Win32::System::WinRT::{
@@ -25,8 +25,8 @@ use windows::Win32::System::WinRT::{
 pub mod devices;
 pub mod error;
 pub mod monitor;
-pub mod window;
 pub mod recorder;
+pub mod window;
 
 enum Handle {
     HWND(HWND),
@@ -35,7 +35,7 @@ enum Handle {
 
 pub enum ImageMode {
     Save,
-    NoSave
+    NoSave,
 }
 
 pub struct WindowRect {
@@ -57,9 +57,7 @@ struct ImageResource {
     size: ResourceSize,
 }
 
-fn create_dynamic_image(
-    image_scr: &ImageResource,
-) -> error::Result<DynamicImage> {
+fn create_dynamic_image(image_scr: &ImageResource) -> error::Result<DynamicImage> {
     let mut img = ImageBuffer::new(image_scr.size.width, image_scr.size.height);
 
     for (x, y, pixel) in img.enumerate_pixels_mut() {
@@ -75,7 +73,6 @@ fn create_dynamic_image(
         }
     }
 
-
     // Convert the ImageBuffer to a DynamicImage
     let dynamic_image = DynamicImage::ImageRgba8(img);
 
@@ -86,10 +83,8 @@ fn create_dynamic_image(
 fn create_capture_item(handle: Handle) -> Result<GraphicsCaptureItem> {
     let interop = windows::core::factory::<GraphicsCaptureItem, IGraphicsCaptureItemInterop>()?;
     match handle {
-        Handle::HWND(window_handle) =>
-            unsafe { interop.CreateForWindow(window_handle) },
-        Handle::HMONITOR(monitor_handle) =>
-            unsafe { interop.CreateForMonitor(monitor_handle) },
+        Handle::HWND(window_handle) => unsafe { interop.CreateForWindow(window_handle) },
+        Handle::HMONITOR(monitor_handle) => unsafe { interop.CreateForMonitor(monitor_handle) },
     }
 }
 
@@ -129,7 +124,7 @@ fn save_as_image(img: &ImageResource) -> error::Result<DynamicImage> {
 
     match ImageReader::open(saved_to_path) {
         Ok(image) => Ok(image.decode().unwrap()),
-        Err(e) => Err(WindowsCaptureError::ImageSaveFailedErr(e))
+        Err(e) => Err(WindowsCaptureError::ImageSaveFailedErr(e)),
     }
 }
 
@@ -143,7 +138,12 @@ fn init() {
     }
 }
 
-fn frame_texture(frame: &Direct3D11CaptureFrame, d3d_device: &ID3D11Device, d3d_context: &ID3D11DeviceContext, rect: &RECT) -> error::Result<ID3D11Texture2D> {
+fn frame_texture(
+    frame: &Direct3D11CaptureFrame,
+    d3d_device: &ID3D11Device,
+    d3d_context: &ID3D11DeviceContext,
+    rect: &RECT,
+) -> error::Result<ID3D11Texture2D> {
     Ok(unsafe {
         let source_texture: ID3D11Texture2D =
             devices::get_d3d_interface_from_object(&frame.Surface()?)?;
@@ -261,7 +261,7 @@ fn take_sc(
 
         let bytes_per_pixel = 4;
         let mut bits = vec![0u8; (subresource_size.width * desc.Height * bytes_per_pixel) as usize];
-        for row in 0 ..subresource_size.height {
+        for row in 0..subresource_size.height {
             let data_begin = (row * (subresource_size.width * bytes_per_pixel)) as usize;
             let data_end = ((row + 1) * (subresource_size.width * bytes_per_pixel)) as usize;
 
@@ -278,12 +278,12 @@ fn take_sc(
 
     match mode {
         ImageMode::Save => save_as_image(&ImageResource {
-            bits: bits,
+            bits,
             size: subresource_size,
         }),
         ImageMode::NoSave => create_dynamic_image(&ImageResource {
-            bits: bits,
+            bits,
             size: subresource_size,
-        })
+        }),
     }
 }

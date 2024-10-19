@@ -24,7 +24,7 @@ fn create_d3d_device_with_type(
             None,
             flags,
             None,
-            D3D11_SDK_VERSION as u32,
+            D3D11_SDK_VERSION,
             Some(device),
             None,
             None,
@@ -32,9 +32,7 @@ fn create_d3d_device_with_type(
     }
 }
 
-pub fn get_d3d_interface_from_object<S: Interface, R: Interface>(
-    object: &S,
-) -> Result<R> {
+pub fn get_d3d_interface_from_object<S: Interface, R: Interface>(object: &S) -> Result<R> {
     let access: IDirect3DDxgiInterfaceAccess = object.cast()?;
     let object = unsafe { access.GetInterface::<R>()? };
     Ok(object)

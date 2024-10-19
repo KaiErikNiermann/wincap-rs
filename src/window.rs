@@ -1,6 +1,6 @@
-use crate::{create_capture_item, init, take_sc, Handle, WindowRect, error};
-use std::{ffi::c_void, mem::size_of, ptr::null_mut};
+use crate::{create_capture_item, error, init, take_sc, Handle, WindowRect};
 use image::DynamicImage;
+use std::{ffi::c_void, mem::size_of, ptr::null_mut};
 use windows::Win32::Foundation::{HWND, RECT};
 use windows::Win32::Graphics::Dwm::DwmGetWindowAttribute;
 use windows::Win32::Graphics::Dwm::DWMWA_EXTENDED_FRAME_BOUNDS;
@@ -11,15 +11,14 @@ use super::ImageMode;
 pub fn window_handle(window_title: &str) -> error::Result<HWND> {
     init();
     let window_name: String = String::from(window_title) + "\0";
-    return unsafe {
-        match HWND(WindowsAndMessaging::FindWindowA(
-            null_mut(),
-            window_name.as_ptr(),
-        )) {
-            HWND(0) => Err(error::WindowsCaptureError::WindowNotFoundErr),
-            handle => Ok(handle),
+    unsafe {
+        let handle = WindowsAndMessaging::FindWindowA(null_mut(), window_name.as_ptr());
+        if handle.is_null() {
+            Err(error::WindowsCaptureError::WindowNotFoundErr)
+        } else {
+            Ok(HWND(handle))
         }
-    };
+    }
 }
 
 pub fn get_window_rect(window_handle: HWND) -> RECT {
@@ -45,7 +44,11 @@ pub fn get_window_rect(window_handle: HWND) -> RECT {
     rect
 }
 
-pub fn window_sc(window_title: &str, rect: Option<&WindowRect>, mode: &ImageMode) -> error::Result<DynamicImage>{
+pub fn window_sc(
+    window_title: &str,
+    rect: Option<&WindowRect>,
+    mode: &ImageMode,
+) -> error::Result<DynamicImage> {
     let window_handle = window_handle(window_title)?;
 
     let capture_rect = match rect {
