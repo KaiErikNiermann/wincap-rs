@@ -12,7 +12,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       name: Check out repository code
 
     - name: Set up Rust
@@ -25,7 +25,7 @@ jobs:
         components: rustfmt, clippy
 
     - name: Cache Cargo registry
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: |
           ~/.cargo/registry
@@ -33,7 +33,7 @@ jobs:
         key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
 
     - name: Cache Cargo target directory
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: target
         key: ${{ runner.os }}-cargo-target-${{ hashFiles('**/Cargo.lock') }}
