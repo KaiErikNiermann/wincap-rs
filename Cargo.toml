@@ -6,11 +6,11 @@ edition = "2021"
 [dependencies]
 image = "0.25"
 backtrace = "0.3"
-thiserror = "1.0"
+thiserror = "2.0"
 anyhow = "1.0"
 
 [dependencies.windows]
-version = "0.58"
+version = "0.62"
 features = [
     "Foundation",
     "Win32_Foundation",
@@ -27,6 +27,7 @@ features = [
     "Win32_System_WinRT_Graphics_Capture",
     "UI",
     "Storage",
+    "Storage_Search",
     "Storage_Streams",
     "Graphics",
     "Graphics_Capture",
@@ -37,7 +38,7 @@ features = [
 ]
 
 [dependencies.windows-sys]
-version = "0.59"
+version = "0.61"
 features = [
     "Win32_Foundation",
     "Win32_UI_WindowsAndMessaging",
