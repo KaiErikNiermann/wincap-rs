@@ -95,18 +95,19 @@ fn save_as_image(img: &ImageResource) -> error::Result<DynamicImage> {
         .to_string_lossy()
         .to_string();
 
-    let folder = StorageFolder::GetFolderFromPathAsync(&HSTRING::from(&path))?.get()?;
+    let folder = StorageFolder::GetFolderFromPathAsync(&HSTRING::from(&path))?.GetResults()?;
 
     let file = folder
         .CreateFileAsync(
             &HSTRING::from("screenshot.png"),
             CreationCollisionOption::ReplaceExisting,
         )?
-        .get()?;
+        .GetResults()?;
 
     // Open the file for writing and encode the image data into the file stream
-    let stream = file.OpenAsync(FileAccessMode::ReadWrite)?.get()?;
-    let encoder = BitmapEncoder::CreateAsync(BitmapEncoder::PngEncoderId()?, &stream)?.get()?;
+    let stream = file.OpenAsync(FileAccessMode::ReadWrite)?.GetResults()?;
+    let encoder =
+        BitmapEncoder::CreateAsync(BitmapEncoder::PngEncoderId()?, &stream)?.GetResults()?;
 
     encoder.SetPixelData(
         BitmapPixelFormat::Bgra8,
@@ -118,7 +119,7 @@ fn save_as_image(img: &ImageResource) -> error::Result<DynamicImage> {
         &img.bits,
     )?;
 
-    encoder.FlushAsync()?.get()?;
+    encoder.FlushAsync()?.GetResults()?;
 
     let saved_to_path = format!("{}/{}", path, "screenshot.png");
 

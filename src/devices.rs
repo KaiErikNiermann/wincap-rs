@@ -1,5 +1,6 @@
 use windows::core::{Interface, Result};
 use windows::Graphics::DirectX::Direct3D11::IDirect3DDevice;
+use windows::Win32::Foundation::HMODULE;
 use windows::Win32::Graphics::Direct3D::{
     D3D_DRIVER_TYPE, D3D_DRIVER_TYPE_HARDWARE, D3D_DRIVER_TYPE_WARP,
 };
@@ -17,11 +18,12 @@ fn create_d3d_device_with_type(
     flags: D3D11_CREATE_DEVICE_FLAG,
     device: *mut Option<ID3D11Device>,
 ) -> Result<()> {
+    let sw_hm = HMODULE::default();
     unsafe {
         D3D11CreateDevice(
             None,
             driver_type,
-            None,
+            sw_hm,
             flags,
             None,
             D3D11_SDK_VERSION,
