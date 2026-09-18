@@ -22,6 +22,7 @@ use windows::Win32::Graphics::Gdi::HMONITOR;
 use windows::Win32::System::WinRT::{
     Graphics::Capture::IGraphicsCaptureItemInterop, RoInitialize, RO_INIT_MULTITHREADED,
 };
+pub mod capture;
 pub mod devices;
 pub mod error;
 pub mod monitor;
@@ -38,6 +39,7 @@ pub enum ImageMode {
     NoSave,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct WindowRect {
     pub left: i32,
     pub top: i32,

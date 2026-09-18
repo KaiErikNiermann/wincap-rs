@@ -6,6 +6,12 @@ pub enum WindowsCaptureError {
     #[error("Failed to find window handle, is the translator window open?")]
     WindowNotFoundErr,
 
+    #[error("The title matches {0} windows; select a specific HWND")]
+    AmbiguousWindowTitle(usize),
+
+    #[error("Invalid window title: {0}")]
+    InvalidWindowTitle(&'static str),
+
     #[error("Failed to get the dimensions of the window, cant capture region")]
     DimensionNotFoundErr(#[source] windows::core::Error),
 

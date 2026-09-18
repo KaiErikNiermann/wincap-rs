@@ -47,6 +47,11 @@ pub fn create_direct3d_device(d3d_device: &ID3D11Device) -> Result<IDirect3DDevi
 }
 
 pub fn create_d3d_device() -> Result<ID3D11Device> {
+    Ok(try_create_d3d_device()?.unwrap())
+}
+
+// Share device creation while preserving the legacy public function's behavior.
+pub(crate) fn try_create_d3d_device() -> Result<Option<ID3D11Device>> {
     let mut device = None;
 
     let mut result = create_d3d_device_with_type(
@@ -70,5 +75,5 @@ pub fn create_d3d_device() -> Result<ID3D11Device> {
     }
 
     result?;
-    Ok(device.unwrap())
+    Ok(device)
 }

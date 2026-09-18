@@ -53,3 +53,23 @@ fn take_sc() -> error::Result<()> {
 ```
 
 There is also `Save` and `NoSave` mode, both yield you a `DynamicImage` but `NoSave` does this directly without saving to disk.
+
+## Capture by HWND with frame information
+
+The optional `capture` module adds capture of an already-selected window:
+
+```rust,no_run
+use std::time::Duration;
+use wincap::capture;
+
+fn capture_window(hwnd: windows::Win32::Foundation::HWND)
+    -> capture::Result<capture::CapturedFrame>
+{
+    capture::capture_hwnd(hwnd, None, Duration::from_secs(5))
+}
+```
+
+This API returns pixels together with frame sizes, crop, and timing, and bounds
+the frame wait. `window::window_handle` now uses exact Unicode title matching
+and rejects duplicate matches. Window and monitor capture keep their existing
+signatures and image-saving behavior. See [HWND capture details](docs/hwnd-capture.md).
